@@ -1,4 +1,4 @@
-#Job Search Dashboard
+# Job Search Dashboard
 A no-build, no-serverside, local browser app for your job search. Free to use and iterate on. Good luck!
 
 ## Install
