@@ -1009,6 +1009,21 @@
     a.download = `jobcrm-backup-${todayISO()}.json`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    localStorage.setItem("jobcrm_last_export", todayISO());
+    updateExportReminder();
+  }
+
+  // Nudge a daily backup: show the banner unless an export (or "Later") happened today.
+  function updateExportReminder() {
+    const banner = $("exportReminder");
+    if (!banner) return;
+    const last = localStorage.getItem("jobcrm_last_export");
+    const snoozed = localStorage.getItem("jobcrm_export_snooze");
+    if (!jobs.length || last === todayISO() || snoozed === todayISO()) { banner.hidden = true; return; }
+    $("exportReminderText").textContent = last
+      ? `Back up your data — last export was ${fmt(last)}.`
+      : "Back up your data — you haven't exported yet.";
+    banner.hidden = false;
   }
 
   async function importData(file) {
@@ -1148,6 +1163,11 @@
     $("exportBtn").addEventListener("click", exportData);
     $("importBtn").addEventListener("click", () => $("importFile").click());
     $("importFile").addEventListener("change", (e) => { if (e.target.files[0]) importData(e.target.files[0]); e.target.value = ""; });
+    $("exportReminderBtn").addEventListener("click", exportData);
+    $("exportReminderDismiss").addEventListener("click", () => {
+      localStorage.setItem("jobcrm_export_snooze", todayISO());
+      updateExportReminder();
+    });
 
     starsEl.addEventListener("click", (e) => {
       if (e.target.dataset.v) {
@@ -1206,5 +1226,6 @@
     wire();
     render();
     setView("home");
+    updateExportReminder();
   })();
 })();
