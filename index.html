@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Job Search CRM</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bitter:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1 id="appTitle" title="Click to set your name">Job Search CRM</h1>
+    <nav class="tabs">
+      <button class="tab active" data-view="home"><u>H</u>ome</button>
+      <button class="tab" data-view="board"><u>B</u>oard</button>
+      <button class="tab" data-view="reminders"><u>R</u>eminders<span id="dueBadge" class="badge" hidden></span></button>
+      <button class="tab" data-view="assets"><u>A</u>ssets</button>
+    </nav>
+    <div class="topbar-actions">
+      <span id="boardActions" class="topbar-actions">
+        <div class="search-wrap">
+          <input type="search" id="searchInput" placeholder="⌘K to Search or Quick Add" autocomplete="off" />
+          <div id="searchTip" class="search-tip" hidden>Quick Add with <strong>&lt;Role&gt; @ &lt;Company&gt;</strong></div>
+          <div id="searchHint" class="search-hint" hidden></div>
+        </div>
+        <button id="addBtn" class="btn primary">+ Add job</button>
+      </span>
+      <button id="exportBtn" class="btn" title="Download all data as JSON">Export</button>
+      <button id="importBtn" class="btn" title="Restore from a JSON backup">Import</button>
+      <input type="file" id="importFile" accept="application/json" hidden />
+    </div>
+  </header>
+
+  <section id="homeView" class="home-view" hidden><!-- injected by JS --></section>
+
+  <div id="boardToolbar" class="subbar">
+    <label class="ctl">Sort
+      <select id="sortSelect">
+        <option value="smart">Priority</option>
+        <option value="applied">Date applied</option>
+        <option value="listed">Date listed</option>
+        <option value="deadline">Deadline</option>
+        <option value="company">Company A–Z</option>
+      </select>
+    </label>
+    <label class="ctl">Source <select id="sourceFilter"><option value="">All</option></select></label>
+    <label class="ctl">Tag <select id="tagFilter"><option value="">All</option></select></label>
+    <label class="ctl checkbox"><input type="checkbox" id="archivedToggle" /> Show archived</label>
+  </div>
+
+  <main id="board" class="board"><!-- columns injected by JS --></main>
+  <section id="remindersView" class="list-view" hidden><!-- injected by JS --></section>
+  <section id="assetsView" class="assets-view" hidden><!-- injected by JS --></section>
+
+  <!-- Card editor modal -->
+  <div id="modal" class="modal-overlay" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-head">
+        <h2 id="modalTitle">Job details</h2>
+        <button id="closeModal" class="icon-btn" aria-label="Close">&times;</button>
+      </div>
+
+      <form id="jobForm" class="modal-body">
+        <input type="hidden" id="f_id" />
+
+        <div class="grid-2">
+          <label class="field">
+            <span>Role *</span>
+            <input type="text" id="f_role" required placeholder="Software Engineer" />
+          </label>
+          <label class="field">
+            <span>Company *</span>
+            <input type="text" id="f_company" required placeholder="Acme Inc." />
+          </label>
+        </div>
+
+        <div class="grid-3">
+          <label class="field">
+            <span>Status</span>
+            <select id="f_status">
+              <option value="listings">Listings</option>
+              <option value="applied">Applied</option>
+              <option value="interview">Interview</option>
+              <option value="offer">Offer</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Date listed</span>
+            <input type="date" id="f_dateListed" />
+          </label>
+          <label class="field">
+            <span>Date applied</span>
+            <input type="date" id="f_dateApplied" />
+          </label>
+        </div>
+
+        <label class="field">
+          <span>Listing link</span>
+          <div class="link-row">
+            <input type="url" id="f_link" placeholder="https://…" />
+            <a id="openLink" class="btn small" target="_blank" rel="noopener" hidden>Open ↗</a>
+          </div>
+        </label>
+
+        <div class="grid-3">
+          <label class="field">
+            <span>Location / remote</span>
+            <input type="text" id="f_location" placeholder="Remote · NYC" />
+          </label>
+          <label class="field">
+            <span>Salary range</span>
+            <input type="text" id="f_salary" placeholder="$120k–150k" />
+          </label>
+          <label class="field">
+            <span>Source</span>
+            <input type="text" id="f_source" placeholder="LinkedIn, referral…" />
+          </label>
+        </div>
+
+        <label class="field" style="max-width:180px">
+          <span>Priority</span>
+          <div id="f_priority" class="stars" data-value="0">
+            <span data-v="1">★</span><span data-v="2">★</span><span data-v="3">★</span><span data-v="4">★</span><span data-v="5">★</span>
+          </div>
+        </label>
+
+        <div class="grid-2">
+          <label class="field">
+            <span>Application deadline</span>
+            <input type="date" id="f_deadline" />
+          </label>
+          <label class="field">
+            <span>Resume</span>
+            <div class="link-row">
+              <select id="f_resumeId"></select>
+              <a id="resumeDl" class="btn small" hidden>↓</a>
+            </div>
+          </label>
+        </div>
+
+        <label class="field">
+          <span>Interview date &amp; time</span>
+          <input type="datetime-local" id="f_interview" />
+        </label>
+
+        <label class="check-field">
+          <input type="checkbox" id="f_hasCover" />
+          <span>Cover letter?</span>
+        </label>
+        <div id="coverFields" class="grid-2" hidden>
+          <label class="field">
+            <span>Cover letter due</span>
+            <input type="date" id="f_coverDue" />
+          </label>
+          <label class="field">
+            <span>Cover letter</span>
+            <div class="link-row">
+              <select id="f_coverId"></select>
+              <a id="coverDl" class="btn small" hidden>↓</a>
+            </div>
+          </label>
+        </div>
+        <p class="hint">Manage resumes &amp; cover letters in the <a href="#" id="gotoAssets">Assets</a> tab.</p>
+
+        <label class="field">
+          <span>Tags <small style="font-weight:400">(comma-separated)</small></span>
+          <input type="text" id="f_tags" placeholder="remote, dream job, referral" />
+        </label>
+
+        <div class="field">
+          <span>Contacts</span>
+          <div id="contactsList" class="contacts-list"></div>
+          <div class="contacts-actions">
+            <button type="button" id="addContact" class="btn small">+ Add contact</button>
+            <a id="findContacts" class="btn small" target="_blank" rel="noopener" title="Opens a pre-filled LinkedIn people search">Find on LinkedIn ↗</a>
+          </div>
+        </div>
+
+        <div class="field">
+          <span>Next follow-up</span>
+          <div id="followUpsList" class="followups-list"></div>
+          <div class="contacts-actions">
+            <button type="button" id="addFollowUp" class="btn small">+ Add date</button>
+          </div>
+        </div>
+
+        <label class="field">
+          <span>Notes</span>
+          <textarea id="f_notes" rows="4" placeholder="Anything else worth remembering…"></textarea>
+        </label>
+      </form>
+
+      <div class="modal-foot">
+        <button id="deleteBtn" class="btn danger" type="button">Delete</button>
+        <button id="archiveBtn" class="btn" type="button">Archive</button>
+        <div class="spacer"></div>
+        <button id="cancelBtn" class="btn" type="button">Cancel</button>
+        <button id="saveBtn" class="btn primary" type="submit" form="jobForm">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick-add URL prompt -->
+  <div id="urlModal" class="modal-overlay" hidden>
+    <div class="modal" style="max-width:440px" role="dialog" aria-modal="true" aria-labelledby="urlModalTitle">
+      <div class="modal-head">
+        <h2 id="urlModalTitle">Add listing link</h2>
+        <button id="closeUrlModal" class="icon-btn" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="hint" id="urlModalSub" style="margin:0"></p>
+        <label class="field">
+          <span>Listing URL</span>
+          <input type="url" id="urlInput" placeholder="https://…" />
+        </label>
+        <p class="hint" style="margin:0">Press Esc to skip.</p>
+      </div>
+      <div class="modal-foot">
+        <div class="spacer"></div>
+        <button id="urlSkip" class="btn" type="button">Skip</button>
+        <button id="urlSave" class="btn primary" type="button">Save link</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
